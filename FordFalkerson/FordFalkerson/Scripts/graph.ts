@@ -1,15 +1,21 @@
-﻿
+﻿export class GraphNode {
 
-export class GraphNode {
+    private static _emtyNode: GraphNode = new GraphNode(0);;
+    public static emptyNode(): GraphNode {
+        return GraphNode._emtyNode;
+    }
 
     public index: number;
     public prevNode: GraphNode;
     public output: Relation[];
     public markData: number;
 
+    public isStockOrEnd: boolean;
+
     constructor(idx: number) {
         this.index = idx;
         this.output = [];
+        this.isStockOrEnd = false;
     }
 }
 
@@ -32,9 +38,28 @@ export class Graph {
     public nodes: GraphNode[];
     public relations: Relation[];
 
-    public source: GraphNode;
-    public end: GraphNode;
+    protected _source: GraphNode;
+    protected _stock: GraphNode;
 
+    public source(value?: GraphNode) {
+        if (value) {
+            this._source = value;
+            value.isStockOrEnd = true;
+        }
+        else {
+            return this._source;
+        }
+    }
+
+    public stock(value?: GraphNode) {
+        if (value) {
+            this._stock = value;
+            value.isStockOrEnd = true;
+        }
+        else {
+            return this._stock;
+        }
+    }
 
     constructor(matrix?: number[][]) {
         this.nodes = [];
@@ -68,4 +93,9 @@ export class Graph {
         return this.relations.filter(x => (x.startNode == a && x.endNode == b) || (x.endNode == a && x.startNode == b))[0];
     }
 
+    public getNeightboards(index: number) {
+        let that = this;
+        let curNode = this.getNodeByIndex(index);
+        return curNode.output.map(x => curNode == x.startNode ? x.endNode : x.startNode);
+    }
 }

@@ -1,9 +1,9 @@
 ﻿import * as Gr from "./graph"
-import { Vuzualizer } from "./AlgVisualisator";
+import * as Vizualizer from "./Vizualizer";
 
 export class FordFalkerson {
 
-    public runAlg(graph: Gr.Graph, viz?: Vuzualizer): number {
+    public runAlg(graph: Gr.Graph, viz: Vizualizer.Vizualizer): number {
         let that = this;
 
         let queue: Gr.GraphNode[] = [];
@@ -13,59 +13,62 @@ export class FordFalkerson {
 
         while (true) {
 
-            graph.source.markData = Infinity;
-            graph.source.prevNode = emptyNode;
-            queue.push(graph.source);
+            graph.source().markData = Infinity;
+            graph.source().prevNode = emptyNode;
+            viz.addCommand(new Vizualizer.SetNodeMarksCommand(graph.source().index, emptyNode.index, graph.source().markData)); // Команда проставки метки
 
+            queue.push(graph.source());
             while (queue.length != 0) {
                 curNode = queue.shift();
-                if (viz) {
-                    viz.addStep("Выбираем вершину", function () {
-                        let node = viz.presenter.getNodePresenter(curNode.index);
-                        node.render("green");
-                    });
-                }
+                viz.addCommand(new Vizualizer.GetNodeCellCommand(curNode.index)); // Команда рассмотрения вершины
 
-
-                let neightboards = curNode.output.map(x => curNode == x.startNode ? x.endNode : x.startNode).filter(x => {
+                let neightboards = graph.getNeightboards(curNode.index).filter(x => {
                     let rel = graph.getRelation(curNode, x);
-                    return (rel.d < rel.r) && (!x.prevNode || (x == graph.end));
+                    return (rel.d < rel.r) && (!x.prevNode || (x == graph.stock()));
                 });
+                viz.addCommand(new Vizualizer.GetNeighBoardsCommand(neightboards.map(x => x.index))); // Рассматриваем соседей
+
 
                 neightboards.forEach(x => {
                     x.prevNode = curNode;
 
                     let relation = graph.getRelation(curNode, x);
+                    viz.addCommand(new Vizualizer.GetRelationsCommand(curNode.index, x.index)); // Рассматриваем связь
+
                     if (relation.d < relation.r && relation.startNode == curNode) {
                         x.markData = Math.min(relation.r - relation.d, Math.abs(x.prevNode.markData));
                     }
                     else {
                         x.markData = (-1) * Math.min(Math.abs(x.prevNode.markData), relation.d);
                     }
+                    viz.addCommand(new Vizualizer.SetNodeMarksCommand(x.index, x.prevNode.index, x.markData)); // Проставляем метку
 
-                    if (x != graph.end) {
+
+                    if (x != graph.stock()) {
                         queue.push(x);
                         queue = queue.sort(that.nodeComparer);
                     }
                     else {
-                        that.stockWasVisited(graph);
+                        that.stockWasVisited(graph, viz);
                     }
+
                 });
+
+                viz.addCommand(new Vizualizer.ClearStyles());
             }
 
-            if (!graph.end.prevNode) break;
+            if (!graph.stock().prevNode) break;
             else {
-                that.clearMarks(graph);
+                that.clearMarks(graph, viz);
             }
-
-
-
         }
 
-        console.log(graph);
+
         let result = 0;
 
-        graph.source.output.forEach(x => result += x.d);
+        graph.source().output.forEach(x => result += x.d);
+        viz.addCommand(new Vizualizer.EndAlgResult(result));
+
         return result;
     }
 
@@ -73,10 +76,11 @@ export class FordFalkerson {
         return a.index - b.index;
     }
 
-    protected stockWasVisited(graph: Gr.Graph): void {
-        let curNode = graph.end;
+    protected stockWasVisited(graph: Gr.Graph, viz: Vizualizer.Vizualizer): void {
+        let curNode = graph.stock();
 
-        while (curNode != graph.source) {
+        while (curNode != graph.source()) {
+            viz.addCommand(new Vizualizer.VisitStockCommand(curNode.index, curNode.prevNode.index));
             let relation = graph.getRelation(curNode, curNode.prevNode);
             relation.d = (relation.d || 0) + curNode.markData;
             curNode.prevNode.markData = curNode.markData;
@@ -86,10 +90,12 @@ export class FordFalkerson {
         curNode.markData = Infinity;
     }
 
-    protected clearMarks(graph: Gr.Graph): void {
+    protected clearMarks(graph: Gr.Graph, viz: Vizualizer.Vizualizer): void {
         graph.nodes.forEach(x => {
             x.markData = 0;
             x.prevNode = null;
         })
+
+        viz.addCommand(new Vizualizer.ClearMarksCommand());
     }
 }

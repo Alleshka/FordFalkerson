@@ -6,11 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Scripts\AlgVisualisator.ts" />
     <None Remove="Scripts\fordFulkersonAlg.ts" />
     <None Remove="Scripts\graph.ts" />
     <None Remove="Scripts\graphPresenter.ts" />
     <None Remove="Scripts\main.ts" />
+    <None Remove="Scripts\Vizualizer.ts" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,11 +19,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <TypeScriptCompile Include="Scripts\AlgVisualisator.ts" />
     <TypeScriptCompile Include="Scripts\fordFulkersonAlg.ts" />
     <TypeScriptCompile Include="Scripts\graph.ts" />
     <TypeScriptCompile Include="Scripts\graphPresenter.ts" />
     <TypeScriptCompile Include="Scripts\main.ts" />
+    <TypeScriptCompile Include="Scripts\Vizualizer.ts" />
   </ItemGroup>
 
   <Target Name="AfterBuild">

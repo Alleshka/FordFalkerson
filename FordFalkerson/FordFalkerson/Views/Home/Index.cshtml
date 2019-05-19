@@ -2,12 +2,30 @@
     ViewData["Title"] = "Home Page";
 }
 
-<h1 id="helloworld">Hello world</h1>
-<canvas id="canvas" width="1000" height="500" onclick="myFunction()"></canvas>
+    <table style="width: 100%; height: 100%">
+        <tbody>
+            <tr style="height: 47px;">
+                <td style="width: 821px; height: 268px;" rowspan="2">
+                    <canvas id="canvas" width="1000" height="1000"></canvas>
+                </td>
+                <td style="width: 205px; height: 47px;">
+                    <div>
+                        <select id="templates"></select>
+                        <button id="next">Следующий шаг</button>
+                        <button id="refresh">Заново</button>
+                        <button id="auto">Автоматически</button>
+
+                    </div>
+                </td>
+            </tr>
+            <tr style="height: 221px;">
+                <td style="width: 75%; height: 221px;">
+                    <textarea id="log" rows="50" style="width: auto"></textarea>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+<label id="result"></label>
+
 <script src="~/bundle/script.js"></script>
-
-<script>
-    function myFunction() {
-
-    }
-</script>
