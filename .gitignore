@@ -328,3 +328,7 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+
+# сгенерированные webpack-ом файлы
+wwwroot/bundle/
