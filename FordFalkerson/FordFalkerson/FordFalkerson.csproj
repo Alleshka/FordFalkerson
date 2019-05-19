@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TypeScriptToolsVersion>3.1</TypeScriptToolsVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Scripts\AlgVisualisator.ts" />
+    <None Remove="Scripts\fordFulkersonAlg.ts" />
+    <None Remove="Scripts\graph.ts" />
+    <None Remove="Scripts\graphPresenter.ts" />
+    <None Remove="Scripts\main.ts" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <TypeScriptCompile Include="Scripts\AlgVisualisator.ts" />
+    <TypeScriptCompile Include="Scripts\fordFulkersonAlg.ts" />
+    <TypeScriptCompile Include="Scripts\graph.ts" />
+    <TypeScriptCompile Include="Scripts\graphPresenter.ts" />
+    <TypeScriptCompile Include="Scripts\main.ts" />
+  </ItemGroup>
+
+  <Target Name="AfterBuild">
+    <Exec Command="npm run webpack-script" />
+  </Target>
+
+</Project>
