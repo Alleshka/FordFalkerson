@@ -332,3 +332,4 @@ ASALocalRun/
 
 # сгенерированные webpack-ом файлы
 wwwroot/bundle/
+wwwroot/
