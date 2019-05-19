@@ -79,6 +79,7 @@ export class Vizualizer {
 
     // Если сменился шаблон
     protected onChangeTemplate() {
+        this.steps = [];
         this.logElem.innerText = "";
         let templateNumber: number = Number(this.selectElem.value);
 
@@ -116,35 +117,35 @@ class GraphGenerator {
             graph.source(graph.getNodeByIndex(1));
             graph.stock(graph.getNodeByIndex(5));
             return graph;
-        })
-        this.templates.push(() => {
-            let graph = new Graph();
-            graph.addNode(new GraphNode(1));
-            graph.addNode(new GraphNode(2));
-            graph.addNode(new GraphNode(3));
-            graph.addNode(new GraphNode(4));
-            graph.addNode(new GraphNode(5));
-            graph.addNode(new GraphNode(6));
-            graph.addNode(new GraphNode(7));
-            graph.addNode(new GraphNode(8));
+        }),
+            this.templates.push(() => {
+                let graph = new Graph();
+                graph.addNode(new GraphNode(1));
+                graph.addNode(new GraphNode(2));
+                graph.addNode(new GraphNode(3));
+                graph.addNode(new GraphNode(4));
+                graph.addNode(new GraphNode(5));
+                graph.addNode(new GraphNode(6));
+                graph.addNode(new GraphNode(7));
+                graph.addNode(new GraphNode(8));
 
-            graph.addRelation(1, 2, 7);
-            graph.addRelation(1, 3, 4);
-            graph.addRelation(1, 4, 9);
-            graph.addRelation(2, 3, 3);
-            graph.addRelation(2, 5, 5);
-            graph.addRelation(3, 6, 11);
-            graph.addRelation(4, 7, 7);
-            graph.addRelation(4, 6, 3);
-            graph.addRelation(5, 3, 8);
-            graph.addRelation(5, 8, 3);
-            graph.addRelation(7, 8, 4);
-            graph.addRelation(8, 6, 2);
+                graph.addRelation(1, 2, 7);
+                graph.addRelation(1, 3, 4);
+                graph.addRelation(1, 4, 9);
+                graph.addRelation(2, 3, 3);
+                graph.addRelation(2, 5, 5);
+                graph.addRelation(3, 6, 11);
+                graph.addRelation(4, 7, 7);
+                graph.addRelation(4, 6, 3);
+                graph.addRelation(5, 3, 8);
+                graph.addRelation(5, 8, 3);
+                graph.addRelation(7, 8, 4);
+                graph.addRelation(8, 6, 2);
 
-            graph.source(graph.getNodeByIndex(1));
-            graph.stock(graph.getNodeByIndex(6));
-            return graph;
-        });
+                graph.source(graph.getNodeByIndex(1));
+                graph.stock(graph.getNodeByIndex(6));
+                return graph;
+            });
     }
 
     public getGraphTemplate(templateNumber: number): Graph {
