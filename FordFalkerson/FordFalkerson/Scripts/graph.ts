@@ -66,6 +66,18 @@ export class Graph {
         this.relations = [];
 
         if (matrix) {
+
+            for (let i: number = 0; i < matrix.length; i++) {
+                let node: GraphNode = new GraphNode(i + 1);
+                this.addNode(node);
+            }
+
+
+            for (let i: number = 0; i < matrix.length; i++) {
+                for (let j: number = i; j < matrix[i].length; j++) {
+                    if (matrix[i][j] > 0) this.addRelation((i+1), (j+1), matrix[i][j]);
+                }
+            }
             console.log(matrix);
         }
     }

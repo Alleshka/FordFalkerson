@@ -63,6 +63,7 @@ export class Vizualizer {
                 that.grahpGenerator.addTemplate(null);
                 elem.text = "Новый граф";
                 that.selectElem.add(elem, null);
+                that.onChangeTemplate(); // Первичное значение
             }
 
         });
@@ -73,7 +74,6 @@ export class Vizualizer {
 
     protected addEvents(): void {
         this.selectElem.addEventListener("change", this.onChangeTemplate.bind(this)); // Событие смены шаблона
-        // this.onChangeTemplate(); // Первичное значение
 
         (<HTMLButtonElement>document.getElementById("next")).addEventListener("click", this.nextStep.bind(this)); // Следующий шаг
         (<HTMLButtonElement>document.getElementById("auto")).addEventListener("click", this.runAlgAuto.bind(this)); // Автоматическое воспроизведение
@@ -246,9 +246,11 @@ class GraphGenerator {
 
     public getGraphTemplate(templateNumber: number): Graph {
         let template = this.templates[templateNumber];
-        let gr = new Graph(template.matrix);
-        gr.source(gr.getNodeByIndex(template.source || 1));
-        gr.stock(gr.getNodeByIndex(template.source || gr.nodes.length - 1));
+        let gr = new Graph((template && template.matrix) || null);
+        if (template) {
+            gr.source(gr.getNodeByIndex(template.source || 1));
+            gr.stock(gr.getNodeByIndex(template.stock || gr.nodes.length - 1));
+        }
         return gr;
     }
 

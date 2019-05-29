@@ -27,6 +27,16 @@ var Graph = /** @class */ (function () {
         this.nodes = [];
         this.relations = [];
         if (matrix) {
+            for (var i = 0; i < matrix.length; i++) {
+                var node = new GraphNode(i + 1);
+                this.addNode(node);
+            }
+            for (var i = 0; i < matrix.length; i++) {
+                for (var j = i; j < matrix[i].length; j++) {
+                    if (matrix[i][j] > 0)
+                        this.addRelation((i + 1), (j + 1), matrix[i][j]);
+                }
+            }
             console.log(matrix);
         }
     }

@@ -50,6 +50,7 @@ var Vizualizer = /** @class */ (function () {
                 that.grahpGenerator.addTemplate(null);
                 elem.text = "Новый граф";
                 that.selectElem.add(elem, null);
+                that.onChangeTemplate(); // Первичное значение
             }
         });
         request.send();
@@ -57,7 +58,6 @@ var Vizualizer = /** @class */ (function () {
     };
     Vizualizer.prototype.addEvents = function () {
         this.selectElem.addEventListener("change", this.onChangeTemplate.bind(this)); // Событие смены шаблона
-        // this.onChangeTemplate(); // Первичное значение
         document.getElementById("next").addEventListener("click", this.nextStep.bind(this)); // Следующий шаг
         document.getElementById("auto").addEventListener("click", this.runAlgAuto.bind(this)); // Автоматическое воспроизведение
         document.getElementById("refresh").addEventListener("click", this.refresh.bind(this)); // Сначала
@@ -189,9 +189,11 @@ var GraphGenerator = /** @class */ (function () {
     };
     GraphGenerator.prototype.getGraphTemplate = function (templateNumber) {
         var template = this.templates[templateNumber];
-        var gr = new Graph(template.matrix);
-        gr.source(gr.getNodeByIndex(template.source || 1));
-        gr.stock(gr.getNodeByIndex(template.source || gr.nodes.length - 1));
+        var gr = new Graph((template && template.matrix) || null);
+        if (template) {
+            gr.source(gr.getNodeByIndex(template.source || 1));
+            gr.stock(gr.getNodeByIndex(template.stock || gr.nodes.length - 1));
+        }
         return gr;
     };
     GraphGenerator.prototype.templateCount = function () {
