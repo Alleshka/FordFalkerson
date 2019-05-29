@@ -12,10 +12,5 @@
   },
   "scripts": {
     "webpack-script": "webpack"
-  },
-  "-vs-binding": {
-    "BeforeBuild": [
-      "webpack-script"
-    ]
   }
 }

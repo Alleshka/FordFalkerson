@@ -153,7 +153,7 @@ export class GrapthPresenter {
 
         // Пересчёт координат и простановка
         let options: NodePresenterOptions[] = this.getNodePresenterOptions(sortNodes);
-        this.nodePresenters.forEach(x => { x.options = options.shift(); x.render(context); });
+        this.nodePresenters.forEach(x => { x.options = x.options || options.shift(); x.render(context); });
 
         // Отрисовка связей и вызов отрисоки вершин
         this.relationPresenters.forEach(x => {
@@ -199,6 +199,19 @@ export class GrapthPresenter {
             curRel.r = r;
             return false;
         }
+    }
+
+    public addNode(x: number, y: number): boolean {
+        let node: GraphNode = new GraphNode(this.nodePresenters.length + 1);
+        this.grath.addNode(node);
+        let presenter: NodePresenter = new NodePresenter(node);
+        presenter.options = {
+            startX: x,
+            startY: y,
+            radius: 30
+        }
+        this.nodePresenters.push(presenter);
+        return true;
     }
 
     public getNodePresenterByCoordinates(x: number, y: number): NodePresenter {

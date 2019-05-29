@@ -12,38 +12,62 @@ var __extends = (this && this.__extends) || (function () {
     };
 })();
 import { GrapthPresenter } from "./graphPresenter";
-import { GraphNode, Graph } from "./graph";
+import { Graph } from "./graph";
 import { setTimeout } from "timers";
 import { FordFalkerson } from "./fordFulkersonAlg";
+// Тут уже слишком много обязанностей, надо будет отрефакторить
 var Vizualizer = /** @class */ (function () {
     function Vizualizer() {
         this.steps = [];
         this.grahpGenerator = new GraphGenerator();
-        this.initElements();
         this.curStep = 0;
+        this.initElemenst();
+        this.addEvents();
     }
-    Vizualizer.prototype.initElements = function () {
-        this.resultElem = document.getElementById("result");
-        this.selectElem = document.getElementById("templates");
-        this.canvasElem = document.getElementById("canvas");
-        this.logElem = document.getElementById("log");
-        this.createModeElem = document.getElementById("createMode");
-        for (var i = 0; i < this.grahpGenerator.templateCount(); i++) {
-            var elem = document.createElement("option");
-            elem.value = i.toString();
-            elem.text = "Шаблон " + (i + 1);
-            this.selectElem.add(elem, null);
-        }
-        this.selectElem.addEventListener("change", this.onChangeTemplate.bind(this));
-        this.onChangeTemplate(); // Первичное значение
-        document.getElementById("next").addEventListener("click", this.nextStep.bind(this));
-        document.getElementById("auto").addEventListener("click", this.runAlgAuto.bind(this));
-        document.getElementById("refresh").addEventListener("click", this.refresh.bind(this));
-        this.createModeElem.addEventListener("change", this.createModeChange.bind(this));
+    Vizualizer.prototype.initElemenst = function () {
+        var that = this;
+        this.resultElem = document.getElementById("result"); // Текст с результатом
+        this.selectElem = document.getElementById("templates"); // dropdown с шаблонами
+        this.canvasElem = document.getElementById("canvas"); // Область с отображением
+        this.logElem = document.getElementById("log"); // Лог действий
+        this.createModeElem = document.getElementById("createMode"); // Включение/Отключение режима создания графа
+        this.saveGrElem = document.getElementById("saveGR"); // Кнопка создания графа
+        var url = "api/saved";
+        var request = new XMLHttpRequest();
+        request.open("get", url);
+        request.addEventListener("readystatechange", function (result) {
+            if (request.readyState == 4 && request.status == 200) {
+                var matrices = JSON.parse(request.responseText);
+                matrices.forEach(function (x, i) {
+                    var elem = document.createElement("option");
+                    that.grahpGenerator.addTemplate(x);
+                    elem.value = i;
+                    elem.text = "Шаблон " + (i + 1);
+                    that.selectElem.add(elem, null);
+                });
+                var elem = document.createElement("option");
+                elem.value = that.grahpGenerator.templateCount().toString();
+                that.grahpGenerator.addTemplate(null);
+                elem.text = "Новый граф";
+                that.selectElem.add(elem, null);
+            }
+        });
+        request.send();
+        document.getElementById("create").hidden = true;
     };
+    Vizualizer.prototype.addEvents = function () {
+        this.selectElem.addEventListener("change", this.onChangeTemplate.bind(this)); // Событие смены шаблона
+        // this.onChangeTemplate(); // Первичное значение
+        document.getElementById("next").addEventListener("click", this.nextStep.bind(this)); // Следующий шаг
+        document.getElementById("auto").addEventListener("click", this.runAlgAuto.bind(this)); // Автоматическое воспроизведение
+        document.getElementById("refresh").addEventListener("click", this.refresh.bind(this)); // Сначала
+        this.createModeElem.addEventListener("change", this.createModeChange.bind(this)); // Событие включения/отключения режима создания
+    };
+    // Добавление команды в визуализатор
     Vizualizer.prototype.addCommand = function (cmd) {
         this.steps.push(cmd);
     };
+    // Показ следующего шага
     Vizualizer.prototype.nextStep = function () {
         if (this.curStep < this.steps.length - 1) {
             this.curStep++;
@@ -51,6 +75,7 @@ var Vizualizer = /** @class */ (function () {
             this.logElem.insertAdjacentText("afterbegin", "\n" + "\n" + this.steps[this.curStep].descr);
         }
     };
+    // Автоматический прогон алгоритма
     Vizualizer.prototype.runAlgAuto = function () {
         var that = this;
         for (var i = 0; i < this.steps.length; i++) {
@@ -59,6 +84,7 @@ var Vizualizer = /** @class */ (function () {
             }, 1500 * (i + 1));
         }
     };
+    // Сброс шагов алгоритма
     Vizualizer.prototype.refresh = function () {
         var templateNumber = Number(this.selectElem.value);
         this.graphPresenter = new GrapthPresenter(this.grahpGenerator.getGraphTemplate(templateNumber), this.canvasElem); // Генерим граф для презентера
@@ -72,17 +98,39 @@ var Vizualizer = /** @class */ (function () {
         var templateNumber = Number(this.selectElem.value);
         this.graphPresenter = new GrapthPresenter(this.grahpGenerator.getGraphTemplate(templateNumber), this.canvasElem); // Генерим граф для презентера
         this.graphPresenter.render(); // Рендерим его
-        var alg = new FordFalkerson();
-        var result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
-        this.resultElem.innerText = "максимальный поток = " + result;
+        if (this.graphPresenter.getGraph().nodes.length > 0) {
+            var alg = new FordFalkerson();
+            var result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
+            this.resultElem.innerText = "максимальный поток = " + result;
+        }
     };
     Vizualizer.prototype.createModeChange = function () {
+        var isChecked = this.createModeElem.checked;
+        this.canvasElem.draggable = isChecked;
+        document.getElementById("viz").hidden = isChecked;
+        document.getElementById("create").hidden = !isChecked;
         if (this.createModeElem.checked) {
-            this.canvasElem.draggable = true;
-            this.canvasElem.ondragstart = this.onDragStart.bind(this);
-            this.canvasElem.ondrag = this.onDrag.bind(this);
-            this.canvasElem.ondragend = this.onDragEnd.bind(this);
+            this.canvasElem.addEventListener("dragstart", this.onDragStart.bind(this));
+            this.canvasElem.addEventListener("drag", this.onDrag.bind(this));
+            this.canvasElem.addEventListener("dragend", this.onDragEnd.bind(this));
+            this.canvasElem.addEventListener("click", this.onClick.bind(this));
+            this.saveGrElem.addEventListener("click", this.saveGraph.bind(this));
         }
+        else {
+            this.canvasElem.removeEventListener("dragstart", this.onDragStart.bind(this));
+            this.canvasElem.removeEventListener("drag", this.onDrag.bind(this));
+            this.canvasElem.removeEventListener("dragend", this.onDragEnd.bind(this));
+            this.canvasElem.removeEventListener("click", this.onClick.bind(this));
+        }
+    };
+    Vizualizer.prototype.saveGraph = function (ev) {
+        this.createModeElem.checked = false;
+        this.createModeChange();
+        console.log("Типа сохранили");
+    };
+    Vizualizer.prototype.onClick = function (ev) {
+        this.graphPresenter.addNode(ev.offsetX, ev.offsetY);
+        this.graphPresenter.render();
     };
     Vizualizer.prototype.onDragStart = function (ev) {
         var node = this.graphPresenter.getNodePresenterByCoordinates(ev.offsetX, ev.offsetY);
@@ -134,54 +182,17 @@ export { Vizualizer };
 var GraphGenerator = /** @class */ (function () {
     function GraphGenerator() {
         this.templates = [];
-        this.templates.push(function () {
-            var graph = new Graph();
-            graph.addNode(new GraphNode(1));
-            graph.addNode(new GraphNode(2));
-            graph.addNode(new GraphNode(3));
-            graph.addNode(new GraphNode(4));
-            graph.addNode(new GraphNode(5));
-            graph.addRelation(1, 2, 20);
-            graph.addRelation(1, 3, 30);
-            graph.addRelation(1, 4, 10);
-            graph.addRelation(2, 3, 40);
-            graph.addRelation(2, 5, 30);
-            graph.addRelation(3, 4, 10);
-            graph.addRelation(3, 5, 20);
-            graph.addRelation(4, 5, 20);
-            graph.source(graph.getNodeByIndex(1));
-            graph.stock(graph.getNodeByIndex(5));
-            return graph;
-        }),
-            this.templates.push(function () {
-                var graph = new Graph();
-                graph.addNode(new GraphNode(1));
-                graph.addNode(new GraphNode(2));
-                graph.addNode(new GraphNode(3));
-                graph.addNode(new GraphNode(4));
-                graph.addNode(new GraphNode(5));
-                graph.addNode(new GraphNode(6));
-                graph.addNode(new GraphNode(7));
-                graph.addNode(new GraphNode(8));
-                graph.addRelation(1, 2, 7);
-                graph.addRelation(1, 3, 4);
-                graph.addRelation(1, 4, 9);
-                graph.addRelation(2, 3, 3);
-                graph.addRelation(2, 5, 5);
-                graph.addRelation(3, 6, 11);
-                graph.addRelation(4, 7, 7);
-                graph.addRelation(4, 6, 3);
-                graph.addRelation(5, 3, 8);
-                graph.addRelation(5, 8, 3);
-                graph.addRelation(7, 8, 4);
-                graph.addRelation(8, 6, 2);
-                graph.source(graph.getNodeByIndex(1));
-                graph.stock(graph.getNodeByIndex(6));
-                return graph;
-            });
     }
+    GraphGenerator.prototype.addTemplate = function (template) {
+        console.log(template);
+        this.templates.push(template);
+    };
     GraphGenerator.prototype.getGraphTemplate = function (templateNumber) {
-        return this.templates[templateNumber]();
+        var template = this.templates[templateNumber];
+        var gr = new Graph(template.matrix);
+        gr.source(gr.getNodeByIndex(template.source || 1));
+        gr.stock(gr.getNodeByIndex(template.source || gr.nodes.length - 1));
+        return gr;
     };
     GraphGenerator.prototype.templateCount = function () {
         return this.templates.length;

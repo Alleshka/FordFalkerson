@@ -1,3 +1,4 @@
+import { GraphNode } from "./graph";
 var NodePresenter = /** @class */ (function () {
     function NodePresenter(node) {
         this.node = node;
@@ -87,7 +88,7 @@ var GrapthPresenter = /** @class */ (function () {
         context.clearRect(0, 0, this.domElement.width, this.domElement.height);
         // Пересчёт координат и простановка
         var options = this.getNodePresenterOptions(sortNodes);
-        this.nodePresenters.forEach(function (x) { x.options = options.shift(); x.render(context); });
+        this.nodePresenters.forEach(function (x) { x.options = x.options || options.shift(); x.render(context); });
         // Отрисовка связей и вызов отрисоки вершин
         this.relationPresenters.forEach(function (x) {
             x.render(context);
@@ -124,6 +125,18 @@ var GrapthPresenter = /** @class */ (function () {
             curRel.r = r;
             return false;
         }
+    };
+    GrapthPresenter.prototype.addNode = function (x, y) {
+        var node = new GraphNode(this.nodePresenters.length + 1);
+        this.grath.addNode(node);
+        var presenter = new NodePresenter(node);
+        presenter.options = {
+            startX: x,
+            startY: y,
+            radius: 30
+        };
+        this.nodePresenters.push(presenter);
+        return true;
     };
     GrapthPresenter.prototype.getNodePresenterByCoordinates = function (x, y) {
         return this.nodePresenters.filter(function (node) { return Math.pow(x - node.options.startX, 2) + Math.pow(y - node.options.startY, 2) <= Math.pow(node.options.radius, 2); })[0];
