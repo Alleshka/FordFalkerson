@@ -75,7 +75,7 @@ export class Graph {
         this.nodes.push(node);
     }
 
-    public addRelation(idxStart: number, idxEnd: number, r: number) {
+    public addRelation(idxStart: number, idxEnd: number, r: number): Relation {
         let start: GraphNode = this.getNodeByIndex(idxStart);
         let end: GraphNode = this.getNodeByIndex(idxEnd);
 
@@ -83,6 +83,7 @@ export class Graph {
         start.output.push(rel);
         end.output.push(rel);
         this.relations.push(rel);
+        return rel;
     }
 
     public getNodeByIndex(idx: number): GraphNode {

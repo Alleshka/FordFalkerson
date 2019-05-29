@@ -1,4 +1,4 @@
-﻿import { GrapthPresenter } from "./graphPresenter"
+﻿import { GrapthPresenter, LineOptions } from "./graphPresenter"
 import { GraphNode, Graph } from "./graph";
 import { setTimeout, clearTimeout } from "timers";
 
@@ -16,6 +16,7 @@ export class Vizualizer {
     protected selectElem: HTMLSelectElement; // Выбор шаблона
 
     protected resultElem: HTMLLabelElement; // Элемент с результатом
+    protected createModeElem: HTMLInputElement;
 
     protected grahpGenerator: GraphGenerator;
 
@@ -31,6 +32,7 @@ export class Vizualizer {
         this.selectElem = <HTMLSelectElement>document.getElementById("templates");
         this.canvasElem = <HTMLCanvasElement>document.getElementById("canvas");
         this.logElem = <HTMLTextAreaElement>document.getElementById("log");
+        this.createModeElem = <HTMLInputElement>document.getElementById("createMode");
 
         for (let i = 0; i < this.grahpGenerator.templateCount(); i++) {
             let elem = document.createElement("option");
@@ -45,6 +47,7 @@ export class Vizualizer {
         (<HTMLButtonElement>document.getElementById("next")).addEventListener("click", this.nextStep.bind(this));
         (<HTMLButtonElement>document.getElementById("auto")).addEventListener("click", this.runAlgAuto.bind(this));
         (<HTMLButtonElement>document.getElementById("refresh")).addEventListener("click", this.refresh.bind(this));
+        this.createModeElem.addEventListener("change", this.createModeChange.bind(this));
     }
 
     public addCommand(cmd: GraphCommand) {
@@ -55,7 +58,7 @@ export class Vizualizer {
         if (this.curStep < this.steps.length - 1) {
             this.curStep++;
             this.steps[this.curStep].execute(this.graphPresenter);
-            this.logElem.insertAdjacentText("afterbegin","\n" + "\n" + this.steps[this.curStep].descr);
+            this.logElem.insertAdjacentText("afterbegin", "\n" + "\n" + this.steps[this.curStep].descr);
         }
     }
 
@@ -89,6 +92,73 @@ export class Vizualizer {
         let alg = new FordFalkerson();
         let result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
         this.resultElem.innerText = "максимальный поток = " + result;
+    }
+
+    protected dragLine: LineOptions;
+    protected createModeChange(): void {
+        if (this.createModeElem.checked) {
+            this.canvasElem.draggable = true;
+            this.canvasElem.ondragstart = this.onDragStart.bind(this);
+            this.canvasElem.ondrag = this.onDrag.bind(this);
+            this.canvasElem.ondragend = this.onDragEnd.bind(this);
+        }
+    }
+
+    protected onDragStart(ev: DragEvent): void {
+        let node = this.graphPresenter.getNodePresenterByCoordinates(ev.offsetX, ev.offsetY);
+        if (node) {
+            this.graphPresenter.clearStyles();
+            this.dragLine = { x1: 0, x2: 0, y1: 0, y2: 0 };
+            this.dragLine.x1 = ev.offsetX;
+            this.dragLine.y1 = ev.offsetY;
+
+            node.nodeStyle = "blue";
+
+            this.graphPresenter.render();
+        }
+    }
+
+    protected onDrag(ev: DragEvent): void {
+        if (this.dragLine) {
+            let oldNode = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x2, this.dragLine.y2);
+            if (oldNode) oldNode.nodeStyle = null;
+
+            this.dragLine.x2 = ev.offsetX;
+            this.dragLine.y2 = ev.offsetY;
+
+
+            let nodeStart = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x1, this.dragLine.y1);
+            if (nodeStart) nodeStart.nodeStyle = "blue";
+
+            let nodeEnd = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x2, this.dragLine.y2);
+            if (nodeEnd) nodeEnd.nodeStyle = "blue";
+
+            this.graphPresenter.render();
+
+            this.graphPresenter.drawLine(this.dragLine);
+        }
+    }
+
+    protected onDragEnd(ev: DragEvent): void {
+        if (this.dragLine) {
+            this.dragLine.x2 = ev.offsetX;
+            this.dragLine.y2 = ev.offsetY;
+
+            let nodeStart = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x1, this.dragLine.y1);
+            nodeStart.nodeStyle = null;
+
+            let nodeEnd = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x2, this.dragLine.y2);
+            nodeEnd.nodeStyle = null;
+
+
+            let r = Number(prompt("Введите вес", "10"));
+            if (!isNaN(r)) {
+                this.graphPresenter.addRelation(nodeStart, nodeEnd, r);
+            }
+
+            this.graphPresenter.render();
+            this.dragLine = null;
+        }
     }
 }
 

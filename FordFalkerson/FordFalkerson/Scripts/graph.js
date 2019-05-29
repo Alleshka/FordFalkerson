@@ -58,6 +58,7 @@ var Graph = /** @class */ (function () {
         start.output.push(rel);
         end.output.push(rel);
         this.relations.push(rel);
+        return rel;
     };
     Graph.prototype.getNodeByIndex = function (idx) {
         return this.nodes.filter(function (x) { return x.index == idx; })[0];

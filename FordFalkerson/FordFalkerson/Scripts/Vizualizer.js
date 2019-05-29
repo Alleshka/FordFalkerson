@@ -27,6 +27,7 @@ var Vizualizer = /** @class */ (function () {
         this.selectElem = document.getElementById("templates");
         this.canvasElem = document.getElementById("canvas");
         this.logElem = document.getElementById("log");
+        this.createModeElem = document.getElementById("createMode");
         for (var i = 0; i < this.grahpGenerator.templateCount(); i++) {
             var elem = document.createElement("option");
             elem.value = i.toString();
@@ -38,6 +39,7 @@ var Vizualizer = /** @class */ (function () {
         document.getElementById("next").addEventListener("click", this.nextStep.bind(this));
         document.getElementById("auto").addEventListener("click", this.runAlgAuto.bind(this));
         document.getElementById("refresh").addEventListener("click", this.refresh.bind(this));
+        this.createModeElem.addEventListener("change", this.createModeChange.bind(this));
     };
     Vizualizer.prototype.addCommand = function (cmd) {
         this.steps.push(cmd);
@@ -73,6 +75,58 @@ var Vizualizer = /** @class */ (function () {
         var alg = new FordFalkerson();
         var result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
         this.resultElem.innerText = "максимальный поток = " + result;
+    };
+    Vizualizer.prototype.createModeChange = function () {
+        if (this.createModeElem.checked) {
+            this.canvasElem.draggable = true;
+            this.canvasElem.ondragstart = this.onDragStart.bind(this);
+            this.canvasElem.ondrag = this.onDrag.bind(this);
+            this.canvasElem.ondragend = this.onDragEnd.bind(this);
+        }
+    };
+    Vizualizer.prototype.onDragStart = function (ev) {
+        var node = this.graphPresenter.getNodePresenterByCoordinates(ev.offsetX, ev.offsetY);
+        if (node) {
+            this.graphPresenter.clearStyles();
+            this.dragLine = { x1: 0, x2: 0, y1: 0, y2: 0 };
+            this.dragLine.x1 = ev.offsetX;
+            this.dragLine.y1 = ev.offsetY;
+            node.nodeStyle = "blue";
+            this.graphPresenter.render();
+        }
+    };
+    Vizualizer.prototype.onDrag = function (ev) {
+        if (this.dragLine) {
+            var oldNode = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x2, this.dragLine.y2);
+            if (oldNode)
+                oldNode.nodeStyle = null;
+            this.dragLine.x2 = ev.offsetX;
+            this.dragLine.y2 = ev.offsetY;
+            var nodeStart = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x1, this.dragLine.y1);
+            if (nodeStart)
+                nodeStart.nodeStyle = "blue";
+            var nodeEnd = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x2, this.dragLine.y2);
+            if (nodeEnd)
+                nodeEnd.nodeStyle = "blue";
+            this.graphPresenter.render();
+            this.graphPresenter.drawLine(this.dragLine);
+        }
+    };
+    Vizualizer.prototype.onDragEnd = function (ev) {
+        if (this.dragLine) {
+            this.dragLine.x2 = ev.offsetX;
+            this.dragLine.y2 = ev.offsetY;
+            var nodeStart = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x1, this.dragLine.y1);
+            nodeStart.nodeStyle = null;
+            var nodeEnd = this.graphPresenter.getNodePresenterByCoordinates(this.dragLine.x2, this.dragLine.y2);
+            nodeEnd.nodeStyle = null;
+            var r = Number(prompt("Введите вес", "10"));
+            if (!isNaN(r)) {
+                this.graphPresenter.addRelation(nodeStart, nodeEnd, r);
+            }
+            this.graphPresenter.render();
+            this.dragLine = null;
+        }
     };
     return Vizualizer;
 }());

@@ -8,7 +8,7 @@ interface NodePresenterOptions {
     radius: number;
 }
 
-interface LineOptions {
+export interface LineOptions {
     x1: number,
     y1: number,
     x2: number,
@@ -17,10 +17,14 @@ interface LineOptions {
 
 class NodePresenter {
 
+    public nodeIndex(): number {
+        return this.node.index;
+    }
+
     protected node: GraphNode;
 
     public options: NodePresenterOptions;
-    public nodeStyle: string | CanvasGradient | CanvasPattern; 
+    public nodeStyle: string | CanvasGradient | CanvasPattern;
 
     constructor(node: GraphNode) {
         this.node = node;
@@ -69,7 +73,7 @@ class NodePresenter {
 class RelationPresenter {
 
     protected relation: Relation;
-    public relationStyle: string | CanvasGradient | CanvasPattern; 
+    public relationStyle: string | CanvasGradient | CanvasPattern;
 
     protected startNodePresenter: NodePresenter;
     protected endNodePresenter: NodePresenter;
@@ -180,6 +184,34 @@ export class GrapthPresenter {
         rel.forEach(x => x.relationStyle = null);
     }
 
+    public addRelation(start: NodePresenter, end: NodePresenter, r: number): boolean {
+
+        let nodeStart = this.grath.getNodeByIndex(start.nodeIndex());
+        let nodeEnd = this.grath.getNodeByIndex(end.nodeIndex());
+        let curRel = this.grath.getRelation(nodeStart, nodeEnd);
+
+        if (!curRel) {
+            curRel = this.grath.addRelation(nodeStart.index, nodeEnd.index, r);
+            this.relationPresenters.push(new RelationPresenter(curRel, start, end));
+            return true;
+        }
+        else {
+            curRel.r = r;
+            return false;
+        }
+    }
+
+    public getNodePresenterByCoordinates(x: number, y: number): NodePresenter {
+        return this.nodePresenters.filter(node => Math.pow(x - node.options.startX, 2) + Math.pow(y - node.options.startY, 2) <= Math.pow(node.options.radius, 2))[0];
+    }
+
+    public drawLine(line: LineOptions): void {
+        let context = this.domElement.getContext("2d");
+        context.moveTo(line.x1, line.y1);
+        context.lineTo(line.x2, line.y2);
+        context.stroke();
+    }
+
     protected initPresenters(graph: Graph): void {
         let that = this;
         that.relationPresenters = [];
@@ -221,7 +253,7 @@ export class GrapthPresenter {
             })
         }
 
-        if(!sortNodes) options = options.sort((a, b) => a.startX - b.startX);
+        if (!sortNodes) options = options.sort((a, b) => a.startX - b.startX);
         return options;
     }
 }

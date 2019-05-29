@@ -2,6 +2,9 @@ var NodePresenter = /** @class */ (function () {
     function NodePresenter(node) {
         this.node = node;
     }
+    NodePresenter.prototype.nodeIndex = function () {
+        return this.node.index;
+    };
     NodePresenter.prototype.render = function (canvasContext) {
         var oldStyle = canvasContext.strokeStyle;
         canvasContext.beginPath();
@@ -107,6 +110,29 @@ var GrapthPresenter = /** @class */ (function () {
         nodes.forEach(function (x) { return x.nodeStyle = null; });
         var rel = this.relationPresenters.filter(function (x) { return x.relationStyle; });
         rel.forEach(function (x) { return x.relationStyle = null; });
+    };
+    GrapthPresenter.prototype.addRelation = function (start, end, r) {
+        var nodeStart = this.grath.getNodeByIndex(start.nodeIndex());
+        var nodeEnd = this.grath.getNodeByIndex(end.nodeIndex());
+        var curRel = this.grath.getRelation(nodeStart, nodeEnd);
+        if (!curRel) {
+            curRel = this.grath.addRelation(nodeStart.index, nodeEnd.index, r);
+            this.relationPresenters.push(new RelationPresenter(curRel, start, end));
+            return true;
+        }
+        else {
+            curRel.r = r;
+            return false;
+        }
+    };
+    GrapthPresenter.prototype.getNodePresenterByCoordinates = function (x, y) {
+        return this.nodePresenters.filter(function (node) { return Math.pow(x - node.options.startX, 2) + Math.pow(y - node.options.startY, 2) <= Math.pow(node.options.radius, 2); })[0];
+    };
+    GrapthPresenter.prototype.drawLine = function (line) {
+        var context = this.domElement.getContext("2d");
+        context.moveTo(line.x1, line.y1);
+        context.lineTo(line.x2, line.y2);
+        context.stroke();
     };
     GrapthPresenter.prototype.initPresenters = function (graph) {
         var that = this;

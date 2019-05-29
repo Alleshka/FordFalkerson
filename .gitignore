@@ -332,6 +332,10 @@ ASALocalRun/
 
 # сгенерированные webpack-ом файлы
 /wwwroot/bundle/
-/wwwroot/lib/
-FordFalkerson/FordFalkerson/wwwroot/lib/
+
+#/wwwroot/lib/
+#FordFalkerson/FordFalkerson/wwwroot/lib/
 FordFalkerson/FordFalkerson/wwwroot/bundle/script.js
+
+*.js
+*.js.map
