@@ -21,5 +21,14 @@ namespace FordFalkerson.Controllers
                 return reader.ReadToEnd();
             }
         }
+
+        [HttpPost]
+        public void Set([FromBody]object matrix)
+        {
+            using (var writer = new StreamWriter(new FileStream("matrix.json", FileMode.Create)))
+            {
+                writer.Write(matrix.ToString());
+            }
+        }
     }
 }

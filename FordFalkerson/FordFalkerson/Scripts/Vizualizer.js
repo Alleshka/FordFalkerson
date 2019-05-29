@@ -18,6 +18,7 @@ import { FordFalkerson } from "./fordFulkersonAlg";
 // Тут уже слишком много обязанностей, надо будет отрефакторить
 var Vizualizer = /** @class */ (function () {
     function Vizualizer() {
+        this.apiPath = "api/saved";
         this.steps = [];
         this.grahpGenerator = new GraphGenerator();
         this.curStep = 0;
@@ -32,29 +33,37 @@ var Vizualizer = /** @class */ (function () {
         this.logElem = document.getElementById("log"); // Лог действий
         this.createModeElem = document.getElementById("createMode"); // Включение/Отключение режима создания графа
         this.saveGrElem = document.getElementById("saveGR"); // Кнопка создания графа
-        var url = "api/saved";
+        var url = this.apiPath;
         var request = new XMLHttpRequest();
         request.open("get", url);
         request.addEventListener("readystatechange", function (result) {
             if (request.readyState == 4 && request.status == 200) {
                 var matrices = JSON.parse(request.responseText);
                 matrices.forEach(function (x, i) {
-                    var elem = document.createElement("option");
                     that.grahpGenerator.addTemplate(x);
-                    elem.value = i;
-                    elem.text = "Шаблон " + (i + 1);
-                    that.selectElem.add(elem, null);
                 });
-                var elem = document.createElement("option");
-                elem.value = that.grahpGenerator.templateCount().toString();
-                that.grahpGenerator.addTemplate(null);
-                elem.text = "Новый граф";
-                that.selectElem.add(elem, null);
+                that.initTemplatesElems();
                 that.onChangeTemplate(); // Первичное значение
             }
         });
         request.send();
         document.getElementById("create").hidden = true;
+    };
+    Vizualizer.prototype.initTemplatesElems = function () {
+        console.log(this.selectElem);
+        while (this.selectElem.children.length != 0) {
+            this.selectElem.remove(0);
+        }
+        for (var i = 0; i < this.grahpGenerator.templateCount(); i++) {
+            var elem_1 = document.createElement("option");
+            elem_1.value = i.toString();
+            elem_1.text = "Шаблон " + (i + 1);
+            this.selectElem.add(elem_1);
+        }
+        var elem = document.createElement("option");
+        elem.value = this.grahpGenerator.templateCount().toString();
+        elem.text = "Новый граф";
+        this.selectElem.add(elem, null);
     };
     Vizualizer.prototype.addEvents = function () {
         this.selectElem.addEventListener("change", this.onChangeTemplate.bind(this)); // Событие смены шаблона
@@ -69,6 +78,9 @@ var Vizualizer = /** @class */ (function () {
     };
     // Показ следующего шага
     Vizualizer.prototype.nextStep = function () {
+        if (this.steps.length == 0) {
+            this.runAlg();
+        }
         if (this.curStep < this.steps.length - 1) {
             this.curStep++;
             this.steps[this.curStep].execute(this.graphPresenter);
@@ -77,11 +89,22 @@ var Vizualizer = /** @class */ (function () {
     };
     // Автоматический прогон алгоритма
     Vizualizer.prototype.runAlgAuto = function () {
+        if (this.steps.length == 0) {
+            this.runAlg();
+        }
         var that = this;
         for (var i = 0; i < this.steps.length; i++) {
             setTimeout(function (i) {
                 that.nextStep();
             }, 1500 * (i + 1));
+        }
+    };
+    Vizualizer.prototype.runAlg = function () {
+        var templateNumber = Number(this.selectElem.value);
+        if (this.graphPresenter.getGraph().nodes.length > 0) {
+            var alg = new FordFalkerson();
+            var result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
+            this.resultElem.innerText = "максимальный поток = " + result;
         }
     };
     // Сброс шагов алгоритма
@@ -98,11 +121,6 @@ var Vizualizer = /** @class */ (function () {
         var templateNumber = Number(this.selectElem.value);
         this.graphPresenter = new GrapthPresenter(this.grahpGenerator.getGraphTemplate(templateNumber), this.canvasElem); // Генерим граф для презентера
         this.graphPresenter.render(); // Рендерим его
-        if (this.graphPresenter.getGraph().nodes.length > 0) {
-            var alg = new FordFalkerson();
-            var result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
-            this.resultElem.innerText = "максимальный поток = " + result;
-        }
     };
     Vizualizer.prototype.createModeChange = function () {
         var isChecked = this.createModeElem.checked;
@@ -124,9 +142,28 @@ var Vizualizer = /** @class */ (function () {
         }
     };
     Vizualizer.prototype.saveGraph = function (ev) {
+        var that = this;
+        var opt = this.graphPresenter.getGraph().toOptions();
+        var source = Number(prompt("Введите вершину 'Сток'", (opt.source || 1).toString()));
+        var stock = Number(prompt("Введите вершину 'Исток'", (opt.stock || opt.matrix.length).toString()));
+        opt.source = source;
+        opt.stock = stock;
+        this.grahpGenerator.addTemplate(opt);
+        this.initTemplatesElems();
+        var url = this.apiPath;
+        var request = new XMLHttpRequest();
+        request.open("post", url);
+        request.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+        request.addEventListener("readystatechange", function (result) {
+            if (request.readyState == 4 && request.status == 200) {
+                alert("Шаблон сохранён");
+            }
+        });
+        var body = this.grahpGenerator.toSave();
+        request.send(body.toString());
+        console.log("Типа сохранили");
         this.createModeElem.checked = false;
         this.createModeChange();
-        console.log("Типа сохранили");
     };
     Vizualizer.prototype.onClick = function (ev) {
         this.graphPresenter.addNode(ev.offsetX, ev.offsetY);
@@ -198,6 +235,9 @@ var GraphGenerator = /** @class */ (function () {
     };
     GraphGenerator.prototype.templateCount = function () {
         return this.templates.length;
+    };
+    GraphGenerator.prototype.toSave = function () {
+        return JSON.stringify(this.templates);
     };
     return GraphGenerator;
 }());

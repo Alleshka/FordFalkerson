@@ -7,6 +7,9 @@ import { request } from "https";
 
 // Тут уже слишком много обязанностей, надо будет отрефакторить
 export class Vizualizer {
+
+    private apiPath: string;
+
     protected graphPresenter: GrapthPresenter;
 
     protected steps: GraphCommand[];
@@ -24,6 +27,9 @@ export class Vizualizer {
     protected grahpGenerator: GraphGenerator;
 
     constructor() {
+
+        this.apiPath = "api/saved";
+
         this.steps = [];
         this.grahpGenerator = new GraphGenerator();
 
@@ -43,7 +49,7 @@ export class Vizualizer {
         this.createModeElem = <HTMLInputElement>document.getElementById("createMode"); // Включение/Отключение режима создания графа
         this.saveGrElem = <HTMLButtonElement>document.getElementById("saveGR"); // Кнопка создания графа
 
-        let url = "api/saved";
+        let url = this.apiPath;
         let request = new XMLHttpRequest();
         request.open("get", url);
         request.addEventListener("readystatechange", function (result) {
@@ -51,18 +57,11 @@ export class Vizualizer {
             if (request.readyState == 4 && request.status == 200) {
                 let matrices = JSON.parse(request.responseText);
                 matrices.forEach((x, i) => {
-                    let elem = document.createElement("option");
                     that.grahpGenerator.addTemplate(x);
-                    elem.value = i;
-                    elem.text = "Шаблон " + (i + 1);
-                    that.selectElem.add(elem, null);
+
                 });
 
-                let elem = document.createElement("option");
-                elem.value = that.grahpGenerator.templateCount().toString();
-                that.grahpGenerator.addTemplate(null);
-                elem.text = "Новый граф";
-                that.selectElem.add(elem, null);
+                that.initTemplatesElems();
                 that.onChangeTemplate(); // Первичное значение
             }
 
@@ -70,6 +69,26 @@ export class Vizualizer {
         request.send();
 
         document.getElementById("create").hidden = true;
+    }
+
+    protected initTemplatesElems(): void {
+
+        console.log(this.selectElem);
+        while (this.selectElem.children.length != 0) {
+            this.selectElem.remove(0);
+        }
+
+        for (let i: number = 0; i < this.grahpGenerator.templateCount(); i++) {
+            let elem = document.createElement("option");
+            elem.value = i.toString();
+            elem.text = "Шаблон " + (i + 1);
+            this.selectElem.add(elem);
+        }
+
+        let elem = document.createElement("option");
+        elem.value = this.grahpGenerator.templateCount().toString();
+        elem.text = "Новый граф";
+        this.selectElem.add(elem, null);
     }
 
     protected addEvents(): void {
@@ -89,6 +108,11 @@ export class Vizualizer {
 
     // Показ следующего шага
     public nextStep() {
+
+        if (this.steps.length == 0) {
+            this.runAlg();
+        }
+
         if (this.curStep < this.steps.length - 1) {
             this.curStep++;
             this.steps[this.curStep].execute(this.graphPresenter);
@@ -98,11 +122,26 @@ export class Vizualizer {
 
     // Автоматический прогон алгоритма
     protected runAlgAuto() {
+
+        if (this.steps.length == 0) {
+            this.runAlg();
+        }
+
         let that = this;
         for (let i = 0; i < this.steps.length; i++) {
             setTimeout(function (i) {
                 that.nextStep();
             }, 1500 * (i + 1));
+        }
+    }
+
+    protected runAlg(): void {
+
+        let templateNumber: number = Number(this.selectElem.value);
+        if (this.graphPresenter.getGraph().nodes.length > 0) {
+            let alg = new FordFalkerson();
+            let result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
+            this.resultElem.innerText = "максимальный поток = " + result;
         }
     }
 
@@ -124,12 +163,6 @@ export class Vizualizer {
 
         this.graphPresenter = new GrapthPresenter(this.grahpGenerator.getGraphTemplate(templateNumber), this.canvasElem); // Генерим граф для презентера
         this.graphPresenter.render(); // Рендерим его
-
-        if (this.graphPresenter.getGraph().nodes.length > 0) {
-            let alg = new FordFalkerson();
-            let result = alg.runAlg(this.grahpGenerator.getGraphTemplate(templateNumber), this); // Сюда подставляем другой граф, чтобы он был "чистый"
-            this.resultElem.innerText = "максимальный поток = " + result;
-        }
     }
 
     protected dragLine: LineOptions;
@@ -157,10 +190,39 @@ export class Vizualizer {
     }
 
     protected saveGraph(ev: MouseEvent) {
-        this.createModeElem.checked = false;
-        this.createModeChange();
+
+        let that = this;
+
+        let opt = this.graphPresenter.getGraph().toOptions();
+
+        let source = Number(prompt("Введите вершину 'Сток'", (opt.source || 1).toString()));
+        let stock = Number(prompt("Введите вершину 'Исток'", (opt.stock || opt.matrix.length).toString()));
+
+        opt.source = source;
+        opt.stock = stock;
+
+        this.grahpGenerator.addTemplate(opt);
+
+        this.initTemplatesElems();
+
+        let url = this.apiPath;
+        let request = new XMLHttpRequest();
+        request.open("post", url);
+        request.setRequestHeader('Content-type', 'application/json; charset=utf-8');
+        request.addEventListener("readystatechange", function (result) {
+            if (request.readyState == 4 && request.status == 200) {
+                alert("Шаблон сохранён");
+            }
+        });
+
+        
+        let body = this.grahpGenerator.toSave();
+        request.send(body.toString());
 
         console.log("Типа сохранили");
+
+        this.createModeElem.checked = false;
+        this.createModeChange();
     }
 
     protected onClick(ev: MouseEvent) {
@@ -256,6 +318,10 @@ class GraphGenerator {
 
     public templateCount(): number {
         return this.templates.length;
+    }
+
+    public toSave(): string {
+        return JSON.stringify(this.templates);
     }
 }
 

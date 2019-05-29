@@ -75,10 +75,27 @@ export class Graph {
 
             for (let i: number = 0; i < matrix.length; i++) {
                 for (let j: number = i; j < matrix[i].length; j++) {
-                    if (matrix[i][j] > 0) this.addRelation((i+1), (j+1), matrix[i][j]);
+                    if (matrix[i][j] > 0) this.addRelation((i + 1), (j + 1), matrix[i][j]);
                 }
             }
-            console.log(matrix);
+        }
+    }
+
+    public toOptions() {
+        let matrix: number[][] = [];
+
+        for (let i: number = 0; i < this.nodes.length; i++) {
+            matrix[i] = [];
+            for (let j: number = 0; j < this.nodes.length; j++) {
+                let rel = this.relations.filter(rel => rel.startNode.index == (i+1) && rel.endNode.index == (j + 1))[0];
+                matrix[i][j] = (rel && rel.r) || 0;
+            }
+        }
+
+        return {
+            source: (this.source() && this.source().index) || 1,
+            stock: (this.stock() && this.stock().index) || (this.nodes.length),
+            matrix: matrix
         }
     }
 

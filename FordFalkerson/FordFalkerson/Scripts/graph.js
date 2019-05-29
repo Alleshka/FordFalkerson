@@ -37,7 +37,6 @@ var Graph = /** @class */ (function () {
                         this.addRelation((i + 1), (j + 1), matrix[i][j]);
                 }
             }
-            console.log(matrix);
         }
     }
     Graph.prototype.source = function (value) {
@@ -57,6 +56,28 @@ var Graph = /** @class */ (function () {
         else {
             return this._stock;
         }
+    };
+    Graph.prototype.toOptions = function () {
+        var matrix = [];
+        var _loop_1 = function (i) {
+            matrix[i] = [];
+            var _loop_2 = function (j) {
+                var rel = this_1.relations.filter(function (rel) { return rel.startNode.index == (i + 1) && rel.endNode.index == (j + 1); })[0];
+                matrix[i][j] = (rel && rel.r) || 0;
+            };
+            for (var j = 0; j < this_1.nodes.length; j++) {
+                _loop_2(j);
+            }
+        };
+        var this_1 = this;
+        for (var i = 0; i < this.nodes.length; i++) {
+            _loop_1(i);
+        }
+        return {
+            source: (this.source() && this.source().index) || 1,
+            stock: (this.stock() && this.stock().index) || (this.nodes.length),
+            matrix: matrix
+        };
     };
     Graph.prototype.addNode = function (node) {
         this.nodes.push(node);
